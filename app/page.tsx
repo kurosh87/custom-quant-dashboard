@@ -1,11 +1,17 @@
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
+import { InteractiveNebulaShader } from "@/components/ui/liquid-shader"
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
-      <div className="max-w-xl space-y-6">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-6 text-center">
+      <InteractiveNebulaShader
+        hasActiveReminders
+        disableCenterDimming
+        className="pointer-events-none opacity-80"
+      />
+      <div className="relative z-10 max-w-xl space-y-6 rounded-3xl border border-white/10 bg-background/40 p-10 backdrop-blur">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary">
             Quant Dashboard Demo
