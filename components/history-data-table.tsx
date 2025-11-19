@@ -1,0 +1,596 @@
+"use client"
+
+import * as React from "react"
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type UniqueIdentifier,
+} from "@dnd-kit/core"
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import {
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconDotsVertical,
+  IconGripVertical,
+  IconLayoutColumns,
+  IconPlus,
+} from "@tabler/icons-react"
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  Row,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table"
+import { z } from "zod"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+export const historySchema = z.object({
+  id: z.string(),
+  symbol: z.string().nullable(),
+  timeframe: z.string().nullable(),
+  timestamp: z.string().nullable(),
+  recordedAt: z.string().nullable(),
+  price: z.number().nullable(),
+  signalType: z.string().nullable(),
+  signalStrength: z.number().nullable(),
+  buyScore: z.number().nullable(),
+  sellScore: z.number().nullable(),
+  compressionRange: z.number().nullable(),
+  compressionCenter: z.number().nullable(),
+  compressionZone: z.string().nullable(),
+  compressionPerfectSetup: z.boolean().nullable(),
+  bbwpClassification: z.string().nullable(),
+  bbwpValue: z.number().nullable(),
+  jewelFast: z.number().nullable(),
+  jewelSlow: z.number().nullable(),
+  jewelHigh: z.number().nullable(),
+  payload: z.record(z.string(), z.any()).nullable(),
+})
+
+export type HistoryRow = z.infer<typeof historySchema>
+
+function DragHandle({ id }: { id: string }) {
+  const { attributes, listeners } = useSortable({
+    id,
+  })
+
+  return (
+    <Button
+      {...attributes}
+      {...listeners}
+      variant="ghost"
+      size="icon"
+      className="text-muted-foreground size-7 hover:bg-transparent"
+    >
+      <IconGripVertical className="text-muted-foreground size-3" />
+      <span className="sr-only">Drag to reorder</span>
+    </Button>
+  )
+}
+
+const columns: ColumnDef<HistoryRow>[] = [
+  {
+    id: "drag",
+    header: () => null,
+    cell: ({ row }) => <DragHandle id={row.original.id} />,
+  },
+  {
+    id: "select",
+    header: ({ table }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) =>
+            table.toggleAllPageRowsSelected(!!value)
+          }
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "symbol",
+    header: "Signal",
+    cell: ({ row }) => <HistoryCell item={row.original} />,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "signalType",
+    header: "Type",
+    cell: ({ row }) => (
+      <div className="flex flex-col gap-0.5">
+        <Badge
+          variant={
+            row.original.signalType?.includes("SELL")
+              ? "secondary"
+              : "default"
+          }
+          className="w-fit uppercase"
+        >
+          {row.original.signalType ?? "—"}
+        </Badge>
+        <span className="text-muted-foreground text-xs">
+          Strength {row.original.signalStrength ?? "—"}
+        </span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "price",
+    header: "Price",
+    cell: ({ row }) => (
+      <div className="text-right font-semibold">
+        {formatNumber(row.original.price)}
+      </div>
+    ),
+  },
+  {
+    id: "scores",
+    header: "Scores",
+    cell: ({ row }) => (
+      <div className="flex flex-col text-xs font-semibold">
+        <span className="text-emerald-600">
+          Buy {row.original.buyScore ?? "—"}
+        </span>
+        <span className="text-destructive">
+          Sell {row.original.sellScore ?? "—"}
+        </span>
+      </div>
+    ),
+  },
+  {
+    id: "compression",
+    header: "Compression",
+    cell: ({ row }) => (
+      <div className="flex flex-col text-xs">
+        <span className="font-semibold">
+          Range {formatNumber(row.original.compressionRange)}
+        </span>
+        <span className="text-muted-foreground">
+          {row.original.compressionZone ?? "—"}
+        </span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "bbwpClassification",
+    header: "BBWP",
+    cell: ({ row }) => (
+      <div className="flex flex-col text-xs">
+        <span className="font-semibold">
+          {row.original.bbwpClassification ?? "—"}
+        </span>
+        <span className="text-muted-foreground">
+          {formatNumber(row.original.bbwpValue)}
+        </span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "compressionPerfectSetup",
+    header: "Setup",
+    cell: ({ row }) => (
+      <Badge
+        variant={row.original.compressionPerfectSetup ? "default" : "secondary"}
+        className="w-fit"
+      >
+        {row.original.compressionPerfectSetup ? "Perfect" : "Standard"}
+      </Badge>
+    ),
+  },
+  {
+    id: "payload",
+    header: "Payload",
+    cell: ({ row }) => <PayloadDrawer item={row.original} />,
+  },
+  {
+    id: "jewelLines",
+    header: "Jewel Lines",
+    cell: ({ row }) => (
+      <div className="text-xs font-medium">
+        <span className="text-cyan-500">
+          {formatNumber(row.original.jewelFast)}
+        </span>
+        {", "}
+        <span className="text-pink-500">
+          {formatNumber(row.original.jewelSlow)}
+        </span>
+        {", "}
+        <span className="text-yellow-500">
+          {formatNumber(row.original.jewelHigh)}
+        </span>
+      </div>
+    ),
+  },
+  {
+    id: "actions",
+    cell: () => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+            size="icon"
+          >
+            <IconDotsVertical />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuItem>Pin</DropdownMenuItem>
+          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive">
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  },
+]
+
+function DraggableRow({ row }: { row: Row<HistoryRow> }) {
+  const { transform, transition, setNodeRef, isDragging } = useSortable({
+    id: row.original.id,
+  })
+
+  return (
+    <TableRow
+      data-state={row.getIsSelected() && "selected"}
+      data-dragging={isDragging}
+      ref={setNodeRef}
+      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition,
+      }}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <TableCell key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+}
+
+export function HistoryDataTable({
+  rows,
+  timeframeLabel,
+}: {
+  rows: HistoryRow[]
+  timeframeLabel: string
+}) {
+  const [data, setData] = React.useState(() => rows)
+  const [rowSelection, setRowSelection] = React.useState({})
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  )
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const sortableId = React.useId()
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {}),
+    useSensor(KeyboardSensor, {})
+  )
+
+  React.useEffect(() => {
+    setData(rows)
+    setPagination({ pageIndex: 0, pageSize: 10 })
+  }, [rows])
+
+  const dataIds = React.useMemo<UniqueIdentifier[]>(
+    () => data?.map(({ id }) => id) || [],
+    [data]
+  )
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+      pagination,
+    },
+    getRowId: (row) => row.id,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+  })
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (active && over && active.id !== over.id) {
+      setData((curr) => {
+        const oldIndex = dataIds.indexOf(active.id)
+        const newIndex = dataIds.indexOf(over.id)
+        return arrayMove(curr, oldIndex, newIndex)
+      })
+    }
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6">
+        <div className="text-xl font-semibold">
+          {timeframeLabel} Signals
+        </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <IconLayoutColumns />
+                <span className="hidden lg:inline">Customize Columns</span>
+                <span className="lg:hidden">Columns</span>
+                <IconChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {table
+                .getAllColumns()
+                .filter(
+                  (column) =>
+                    typeof column.accessorFn !== "undefined" &&
+                    column.getCanHide()
+                )
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm">
+            <IconPlus />
+            <span className="hidden lg:inline">Add Filter</span>
+          </Button>
+        </div>
+      </div>
+      <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+        <div className="overflow-hidden rounded-lg border">
+          <DndContext
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+            id={sortableId}
+          >
+            <Table>
+              <TableHeader className="bg-muted sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} colSpan={header.colSpan}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                {table.getRowModel().rows?.length ? (
+                  <SortableContext
+                    items={dataIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {table.getRowModel().rows.map((row) => (
+                      <DraggableRow key={row.id} row={row} />
+                    ))}
+                  </SortableContext>
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No signals yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DndContext>
+        </div>
+        <div className="flex flex-col gap-2 px-2 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+          <div className="text-muted-foreground text-sm">
+            Showing{" "}
+            <span className="font-semibold">
+              {table.getRowModel().rows.length}
+            </span>{" "}
+            of {data.length} results
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Go to first page</span>
+              <IconChevronsLeft />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Go to previous page</span>
+              <IconChevronLeft />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Go to next page</span>
+              <IconChevronRight />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Go to last page</span>
+              <IconChevronsRight />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HistoryCell({ item }: { item: HistoryRow }) {
+  const primaryTime = item.timestamp ?? item.recordedAt ?? null
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-base font-semibold leading-none">
+        {item.symbol ?? "Unknown"}
+      </div>
+      <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs leading-none">
+        <Badge variant="outline">{item.timeframe ?? "—"}</Badge>
+        {formatDate(primaryTime)}
+      </div>
+    </div>
+  )
+}
+
+function PayloadDrawer({ item }: { item: HistoryRow }) {
+  return (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <Button variant="outline" size="sm">
+          View JSON
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent className="h-[80vh] min-h-[60vh]">
+        <DrawerHeader>
+          <DrawerTitle>{item.symbol ?? "Signal payload"}</DrawerTitle>
+          <DrawerDescription>
+            {formatDate(item.timestamp ?? item.recordedAt)}
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="flex-1 overflow-y-auto px-4 pb-6">
+          <pre className="bg-muted text-muted-foreground rounded-lg p-4 text-left text-xs">
+            {JSON.stringify(item.payload ?? {}, null, 2)}
+          </pre>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+function formatNumber(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "—"
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString()
+}
