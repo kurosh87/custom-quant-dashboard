@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/card"
 import type { HistoryRow } from "@/components/history-data-table"
 import { HistoryTimeframeTabs } from "@/components/history-timeframe-tabs"
-import { fetchBitcoinPrice } from "@/lib/market-data"
 
 export default async function Page() {
   await auth.protect()
@@ -42,7 +41,6 @@ export default async function Page() {
     latest2h,
     latest4h,
     fearGreed,
-    bitcoinPrice,
     dashboardDatasets,
   ] = await Promise.all([
     fetchJewelSeries("15m"),
@@ -52,7 +50,6 @@ export default async function Page() {
     fetchLatestSignal("2h"),
     fetchLatestSignal("4h"),
     fetchFearGreedLatest(),
-    fetchBitcoinPrice(),
     fetchDashboardDatasets(),
   ])
 
@@ -84,11 +81,7 @@ export default async function Page() {
         <div className="flex flex-1 flex-col px-4 py-4 md:px-8 md:py-6">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 md:gap-6">
-              <SectionCards
-                summary={latest15m}
-                fearGreed={fearGreed}
-                price={bitcoinPrice}
-              />
+              <SectionCards summary={latest15m} fearGreed={fearGreed} />
               <div className="grid gap-4">
                 <Tabs defaultValue="15m" className="flex flex-col gap-4">
                   <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @md:flex">

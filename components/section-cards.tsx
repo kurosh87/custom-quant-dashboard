@@ -32,24 +32,21 @@ type FearGreedSummary = {
   classification: string | null
 }
 
-type PriceSummary = {
-  value: number | null
-  changePercent?: number | null
-  open?: number | null
-  high?: number | null
-  low?: number | null
-}
-
 const BITCOIN_DOMINANCE = 56.64
+const STATIC_PRICE_CARD = {
+  value: 91680,
+  changePercent: 1.42,
+  open: 90250,
+  high: 92800,
+  low: 89500,
+}
 
 export function SectionCards({
   summary,
   fearGreed,
-  price,
 }: {
   summary?: Summary | null
   fearGreed?: FearGreedSummary | null
-  price?: PriceSummary | null
 }) {
   const compressionValue =
     typeof summary?.compressionRange === "number"
@@ -169,90 +166,54 @@ export function SectionCards({
         </CardFooter>
       </Card>
       <Card className="@container/card border border-emerald-100 dark:border-emerald-400/20">
-        {typeof price?.value === "number" ? (
-          <>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-2">
-                <CardDescription>₿ Current Price</CardDescription>
-                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                  Live 24h feed
-                </Badge>
-              </div>
-              <div className="flex items-baseline justify-between gap-3">
-                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-emerald-600 dark:text-emerald-300">
-                  ${price.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}
-                </CardTitle>
-                {typeof price.changePercent === "number" && (
-                  <Badge
-                    variant="secondary"
-                    className={`${
-                      price.changePercent >= 0
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-                    }`}
-                  >
-                    {price.changePercent >= 0 ? (
-                      <IconTrendingUp className="size-4" />
-                    ) : (
-                      <IconTrendingDown className="size-4" />
-                    )}
-                    {Math.abs(price.changePercent).toFixed(2)}%
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardFooter className="grid w-full grid-cols-3 gap-2 text-xs font-medium text-muted-foreground">
-              <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
-                <div className="text-[10px] uppercase tracking-wide">Open</div>
-                <div className="text-foreground">
-                  {price.open
-                    ? `$${Number(price.open).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-                    : "—"}
-                </div>
-              </div>
-              <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
-                <div className="text-[10px] uppercase tracking-wide">High</div>
-                <div className="text-foreground">
-                  {price.high
-                    ? `$${Number(price.high).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-                    : "—"}
-                </div>
-              </div>
-              <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
-                <div className="text-[10px] uppercase tracking-wide">Low</div>
-                <div className="text-foreground">
-                  {price.low
-                    ? `$${Number(price.low).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-                    : "—"}
-                </div>
-              </div>
-            </CardFooter>
-          </>
-        ) : (
-          <>
-            <CardHeader>
-              <CardDescription>📊 Current Signal</CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {summary?.signalType ?? "—"}
-              </CardTitle>
-              <CardAction>
-                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
-                  ⭐⭐⭐⭐⭐
-                  {summary?.signalStrength
-                    ? ` (${summary.signalStrength}/5)`
-                    : "(waiting)"}
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
-              <div className="line-clamp-1 flex gap-2 font-medium">
-                Buy Score: {summary?.buyScore ?? "—"}
-                <IconTrendingUp className="size-4 text-indigo-500" />
-              </div>
-              <div className="text-muted-foreground">Ready to trigger</div>
-            </CardFooter>
-          </>
-        )}
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardDescription>₿ Current Price</CardDescription>
+            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+              Snapshot
+            </Badge>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-emerald-600 dark:text-emerald-300">
+              ${STATIC_PRICE_CARD.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+            </CardTitle>
+            <Badge
+              variant="secondary"
+              className={`${
+                (STATIC_PRICE_CARD.changePercent ?? 0) >= 0
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+                  : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+              }`}
+            >
+              {(STATIC_PRICE_CARD.changePercent ?? 0) >= 0 ? (
+                <IconTrendingUp className="size-4" />
+              ) : (
+                <IconTrendingDown className="size-4" />
+              )}
+              {Math.abs(STATIC_PRICE_CARD.changePercent ?? 0).toFixed(2)}%
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardFooter className="grid w-full grid-cols-3 gap-2 text-xs font-medium text-muted-foreground">
+          <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
+            <div className="text-[10px] uppercase tracking-wide">Open</div>
+            <div className="text-foreground">
+              ${STATIC_PRICE_CARD.open.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+          <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
+            <div className="text-[10px] uppercase tracking-wide">High</div>
+            <div className="text-foreground">
+              ${STATIC_PRICE_CARD.high.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+          <div className="rounded-md border border-emerald-200/40 p-2 text-center dark:border-emerald-900/40">
+            <div className="text-[10px] uppercase tracking-wide">Low</div>
+            <div className="text-foreground">
+              ${STATIC_PRICE_CARD.low.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+        </CardFooter>
       </Card>
       <Card className="@container/card border border-yellow-100 dark:border-yellow-400/20">
         <CardHeader>
