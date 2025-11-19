@@ -171,6 +171,11 @@ const baseColumns: ColumnDef<HistoryRow>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "signalType",
+    header: "Signal",
+    cell: ({ row }) => <HistoryCell item={row.original} />,
+  },
+  {
     accessorKey: "price",
     header: "Price",
     cell: ({ row }) => (
