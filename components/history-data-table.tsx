@@ -589,7 +589,6 @@ export function HistoryDataTable({
 }
 
 function HistoryCell({ item }: { item: HistoryRow }) {
-  const primaryTime = item.timestamp ?? item.recordedAt ?? null
   const label = (item.signalType ?? "Neutral").toUpperCase()
   const strength = item.signalStrength ?? 0
 
@@ -620,14 +619,9 @@ function HistoryCell({ item }: { item: HistoryRow }) {
   })()
 
   return (
-    <div className="flex flex-col gap-1">
-      <Badge className={`w-fit px-3 text-xs font-semibold ${pill.className}`}>
-        {pill.text}
-      </Badge>
-      <div className="text-muted-foreground text-xs leading-none">
-        {formatDate(primaryTime)}
-      </div>
-    </div>
+    <Badge className={`w-fit px-3 text-xs font-semibold ${pill.className}`}>
+      {pill.text}
+    </Badge>
   )
 }
 

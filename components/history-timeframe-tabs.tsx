@@ -32,7 +32,7 @@ export function HistoryTimeframeTabs({
     <Tabs
       value={value}
       onValueChange={setValue}
-      className="flex flex-col gap-4 px-8 lg:px-12"
+      className="gap-0"
     >
       <div className="flex items-center justify-between">
         <TabsList className="flex w-fit flex-wrap gap-2 border border-border/50 bg-muted/40 px-2 py-2">
@@ -49,12 +49,7 @@ export function HistoryTimeframeTabs({
       </div>
       {TIMEFRAMES.map((tf) => (
         <TabsContent key={tf.value} value={tf.value} className="mt-0">
-          <div className="-mx-4 lg:-mx-6">
-            <HistoryDataTable
-              rows={datasets[tf.value] ?? []}
-              timeframeLabel={tf.label}
-            />
-          </div>
+          <HistoryDataTable rows={datasets[tf.value] ?? []} />
         </TabsContent>
       ))}
     </Tabs>
