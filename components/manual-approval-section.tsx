@@ -84,7 +84,6 @@ export function ManualApprovalSection({
           <HistoryDataTable
             key={tableKey}
             rows={rows}
-            timeframeLabel={timeframeLabel}
             onSelectionChange={setSelectedRows}
             onApproveRow={(row) => openSheetWithRows([row])}
           />
