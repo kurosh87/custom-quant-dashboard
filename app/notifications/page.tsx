@@ -150,54 +150,18 @@ export default async function NotificationsPage() {
               </div>
             </header>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Signals awaiting review</CardTitle>
-                  <CardDescription>
-                    Latest {REVIEW_LABEL.toLowerCase()} triggers for {REVIEW_SYMBOL}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-semibold">{pendingCount}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Select rows in the table to approve or defer.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Conviction snapshot</CardTitle>
-                  <CardDescription>
-                    Based on oscillator strength classifications.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                  <p className="text-3xl font-semibold">
-                    {avgStrength ? `${avgStrength}/5` : "—"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {strongSignals} strong buy signals flagged for human review.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Routing readiness</CardTitle>
-                  <CardDescription>
-                    Keep channels and playbooks aligned.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                  <p className="text-3xl font-semibold">
-                    {onlineChannels}/{channelSettings.length} channels online
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {autoPlaybooks} auto + {manualPlaybooks} manual playbooks active.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border border-muted-foreground/30 bg-muted/20">
+              <CardContent className="space-y-1 text-sm text-muted-foreground">
+                <p>
+                  Latest {REVIEW_LABEL.toLowerCase()} signals for {REVIEW_SYMBOL} appear
+                  below. Select the rows you want to approve; the rest stay in the queue.
+                </p>
+                <p>
+                  Once approved we’ll post the details to 3Commas with the desk’s
+                  standard sizing. Channels stay in sync automatically.
+                </p>
+              </CardContent>
+            </Card>
 
             <div className="grid gap-4 xl:grid-cols-[3fr,1fr]">
               <Card className="xl:order-1">
