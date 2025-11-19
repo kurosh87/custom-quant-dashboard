@@ -33,10 +33,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import {
-  HistoryDataTable,
-  type HistoryRow,
-} from "@/components/history-data-table"
+import type { HistoryRow } from "@/components/history-data-table"
+import { HistoryTimeframeTabs } from "@/components/history-timeframe-tabs"
 
 export default async function Page() {
   await auth.protect()
@@ -50,7 +48,7 @@ export default async function Page() {
     latest4h,
     fearGreed,
     bitcoinPrice,
-    dashboardRows,
+    dashboardDatasets,
   ] = await Promise.all([
     fetchJewelSeries("15m"),
     fetchJewelSeries("2h"),
@@ -60,7 +58,7 @@ export default async function Page() {
     fetchLatestSignal("4h"),
     fetchFearGreedLatest(),
     fetchBitcoinPrice(),
-    fetchDashboardRows(),
+    fetchDashboardDatasets(),
   ])
 
   const sidebarUser = {
@@ -129,18 +127,7 @@ export default async function Page() {
                 <MacroCard />
               </div>
               <ConfluenceCards />
-              <div className="grid gap-4 lg:grid-cols-[3fr,1fr]">
-                <HistoryDataTable
-                  rows={dashboardRows}
-                  timeframeLabel={DASHBOARD_TABLE_LABEL}
-                />
-                <div className="rounded-3xl border bg-card p-6 shadow-sm">
-                  <h2 className="text-xl font-semibold">Workspace log</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Reserve this space for upcoming automation tasks and execution logs.
-                  </p>
-                </div>
-              </div>
+              <HistoryTimeframeTabs datasets={dashboardDatasets} />
             </div>
           </div>
         </div>
@@ -156,16 +143,15 @@ const CSV_FILE_MAP: Record<string, string> = {
 }
 const DASHBOARD_SYMBOL =
   process.env.DEFAULT_HISTORY_SYMBOL ?? "BTCUSDT"
-const DASHBOARD_TABLE_TIMEFRAME =
-  process.env.DASHBOARD_TABLE_TIMEFRAME ?? "15m"
+const DASHBOARD_TABLE_TIMEFRAMES =
+  (process.env.DASHBOARD_TABLE_TIMEFRAMES?.split(",") ?? ["15m"]).map(
+    (tf) => tf.trim()
+  )
 const TIMEFRAME_LABELS: Record<string, string> = {
   "15m": "15 Minute",
   "2h": "2 Hour",
   "4h": "4 Hour",
 }
-const DASHBOARD_TABLE_LABEL =
-  TIMEFRAME_LABELS[DASHBOARD_TABLE_TIMEFRAME] ??
-  DASHBOARD_TABLE_TIMEFRAME
 
 type JewelEntry = {
   timestamp: string
@@ -309,77 +295,94 @@ async function fetchLatestSignal(timeframe: string) {
   }
 }
 
-async function fetchDashboardRows(limit = 100): Promise<HistoryRow[]> {
+type DashboardDatasets = Record<string, HistoryRow[]>
+
+async function fetchDashboardDatasets(
+  limit = 100
+): Promise<DashboardDatasets> {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return []
+    return DASHBOARD_TABLE_TIMEFRAMES.reduce<DashboardDatasets>(
+      (acc, timeframe) => {
+        acc[timeframe] = []
+        return acc
+      },
+      {}
+    )
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data, error } = await supabase
-    .from("signals")
-    .select(
-      "id, symbol, ticker, price, timeframe, timestamp, received_at, signal_type, signal_strength, signal_buy_score, signal_sell_score, compression_total_range, compression_center, compression_fib_zone, compression_perfect_setup, bbwp_value, bbwp_classification, jewel_fast, jewel_slow, jewel_high"
-    )
-    .eq("symbol", DASHBOARD_SYMBOL)
-    .eq("timeframe", DASHBOARD_TABLE_TIMEFRAME)
-    .order("timestamp", { ascending: false })
-    .limit(limit)
+  const result: DashboardDatasets = {}
 
-  if (error || !data) {
-    console.error("Failed to load dashboard rows", error)
-    return []
+  for (const timeframe of DASHBOARD_TABLE_TIMEFRAMES) {
+    const { data, error } = await supabase
+      .from("signals")
+      .select(
+        "id, symbol, ticker, price, timeframe, timestamp, received_at, signal_type, signal_strength, signal_buy_score, signal_sell_score, compression_total_range, compression_center, compression_fib_zone, compression_perfect_setup, bbwp_value, bbwp_classification, jewel_fast, jewel_slow, jewel_high"
+      )
+      .eq("symbol", DASHBOARD_SYMBOL)
+      .eq("timeframe", timeframe)
+      .order("timestamp", { ascending: false })
+      .limit(limit)
+
+    if (error || !data) {
+      console.error("Failed to load dashboard rows", timeframe, error)
+      result[timeframe] = []
+      continue
+    }
+
+    result[timeframe] = data.map((entry) => ({
+      id: toStringValue(entry.id),
+      symbol: entry.symbol ?? entry.ticker ?? null,
+      timeframe: entry.timeframe ?? timeframe,
+      timestamp: entry.timestamp ?? null,
+      recordedAt: entry.received_at ?? null,
+      price: typeof entry.price === "number" ? entry.price : null,
+      signalType: entry.signal_type ?? null,
+      signalStrength:
+        typeof entry.signal_strength === "number"
+          ? entry.signal_strength
+          : null,
+      buyScore:
+        typeof entry.signal_buy_score === "number"
+          ? entry.signal_buy_score
+          : null,
+      sellScore:
+        typeof entry.signal_sell_score === "number"
+          ? entry.signal_sell_score
+          : null,
+      compressionRange:
+        typeof entry.compression_total_range === "number"
+          ? entry.compression_total_range
+          : null,
+      compressionCenter:
+        typeof entry.compression_center === "number"
+          ? entry.compression_center
+          : null,
+      compressionZone: entry.compression_fib_zone ?? null,
+      compressionPerfectSetup:
+        typeof entry.compression_perfect_setup === "boolean"
+          ? entry.compression_perfect_setup
+          : null,
+      bbwpValue:
+        typeof entry.bbwp_value === "number" ? entry.bbwp_value : null,
+      bbwpClassification: entry.bbwp_classification ?? null,
+      jewelFast:
+        typeof entry.jewel_fast === "number" ? entry.jewel_fast : null,
+      jewelSlow:
+        typeof entry.jewel_slow === "number" ? entry.jewel_slow : null,
+      jewelHigh:
+        typeof entry.jewel_high === "number" ? entry.jewel_high : null,
+      payload: null,
+    }))
   }
 
-  return data.map((entry) => ({
-    id: toStringValue(entry.id),
-    symbol: entry.symbol ?? entry.ticker ?? null,
-    timeframe: entry.timeframe ?? DASHBOARD_TABLE_TIMEFRAME,
-    timestamp: entry.timestamp ?? null,
-    recordedAt: entry.received_at ?? null,
-    price: typeof entry.price === "number" ? entry.price : null,
-    signalType: entry.signal_type ?? null,
-    signalStrength:
-      typeof entry.signal_strength === "number"
-        ? entry.signal_strength
-        : null,
-    buyScore:
-      typeof entry.signal_buy_score === "number"
-        ? entry.signal_buy_score
-        : null,
-    sellScore:
-      typeof entry.signal_sell_score === "number"
-        ? entry.signal_sell_score
-        : null,
-    compressionRange:
-      typeof entry.compression_total_range === "number"
-        ? entry.compression_total_range
-        : null,
-    compressionCenter:
-      typeof entry.compression_center === "number"
-        ? entry.compression_center
-        : null,
-    compressionZone: entry.compression_fib_zone ?? null,
-    compressionPerfectSetup:
-      typeof entry.compression_perfect_setup === "boolean"
-        ? entry.compression_perfect_setup
-        : null,
-    bbwpValue:
-      typeof entry.bbwp_value === "number" ? entry.bbwp_value : null,
-    bbwpClassification: entry.bbwp_classification ?? null,
-    jewelFast:
-      typeof entry.jewel_fast === "number" ? entry.jewel_fast : null,
-    jewelSlow:
-      typeof entry.jewel_slow === "number" ? entry.jewel_slow : null,
-    jewelHigh:
-      typeof entry.jewel_high === "number" ? entry.jewel_high : null,
-    payload: null,
-  }))
+  return result
 }
 
 async function fetchFearGreedLatest() {
