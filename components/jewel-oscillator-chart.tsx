@@ -120,7 +120,7 @@ export function JewelOscillatorChart({
           </Toggle>
           <Button asChild size="sm" variant="outline" className="text-xs">
             <a
-              href="https://www.tradingview.com/chart/?symbol=BINANCE:BTCUSDT"
+              href="https://www.tradingview.com/chart/iZS98MJs/?symbol=BINANCE%3ABTCUSDT"
               target="_blank"
               rel="noreferrer"
             >
