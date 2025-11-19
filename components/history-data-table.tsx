@@ -121,7 +121,7 @@ function DragHandle({ id }: { id: string }) {
   )
 }
 
-const columns: ColumnDef<HistoryRow>[] = [
+const baseColumns: ColumnDef<HistoryRow>[] = [
   {
     id: "drag",
     header: () => null,
@@ -213,6 +213,7 @@ const columns: ColumnDef<HistoryRow>[] = [
       <CompressionCell
         range={row.original.compressionRange}
         perfect={Boolean(row.original.compressionPerfectSetup)}
+        signalType={row.original.signalType}
       />
     ),
   },
@@ -364,10 +365,12 @@ export function HistoryDataTable({
   rows,
   timeframeLabel,
   onSelectionChange,
+  onApproveRow,
 }: {
   rows: HistoryRow[]
   timeframeLabel: string
   onSelectionChange?: (rows: HistoryRow[]) => void
+  onApproveRow?: (row: HistoryRow) => void
 }) {
   const [data, setData] = React.useState(() => rows)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -397,6 +400,29 @@ export function HistoryDataTable({
     () => data?.map(({ id }) => id) || [],
     [data]
   )
+
+  const columns = React.useMemo<ColumnDef<HistoryRow>[]>(() => {
+    if (!onApproveRow) {
+      return baseColumns
+    }
+    return [
+      ...baseColumns,
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => onApproveRow(row.original)}
+            className="whitespace-nowrap"
+          >
+            Approve
+          </Button>
+        ),
+      },
+    ]
+  }, [onApproveRow])
 
   const table = useReactTable({
     data,
@@ -524,7 +550,7 @@ export function HistoryDataTable({
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length}
+                      colSpan={table.getAllLeafColumns().length}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No signals yet.
@@ -695,11 +721,13 @@ function DeltaCell({ value }: { value: number | null | undefined }) {
 function CompressionCell({
   range,
   perfect,
+  signalType,
 }: {
   range: number | null | undefined
   perfect: boolean
+  signalType: string | null
 }) {
-  const severity = getCompressionSeverity(range, perfect)
+  const severity = getCompressionSeverity(range, perfect, signalType)
 
   if (range === null || range === undefined || Number.isNaN(range)) {
     return (
@@ -718,23 +746,42 @@ function CompressionCell({
 
 function getCompressionSeverity(
   range: number | null | undefined,
-  perfect: boolean
+  perfect: boolean,
+  signalType: string | null
 ) {
-  if (
-    perfect ||
-    (range !== null &&
-      range !== undefined &&
-      !Number.isNaN(range) &&
-      range <= 3)
-  ) {
+  const label = signalType?.toUpperCase() ?? ""
+  const isBuy = label.includes("BUY")
+  const isSell = label.includes("SELL")
+  const rangeValue =
+    range === null || range === undefined || Number.isNaN(range)
+      ? null
+      : range
+
+  if ((perfect || (rangeValue !== null && rangeValue <= 3)) && isBuy) {
     return {
-      label: "Tight",
+      label: "Extreme Buy",
       className:
         "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
     }
   }
 
-  if (range === null || range === undefined || Number.isNaN(range)) {
+  if ((perfect || (rangeValue !== null && rangeValue <= 3)) && isSell) {
+    return {
+      label: "Extreme Sell",
+      className:
+        "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-200",
+    }
+  }
+
+  if (rangeValue !== null && rangeValue <= 4) {
+    return {
+      label: "Tight",
+      className:
+        "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-200",
+    }
+  }
+
+  if (rangeValue === null) {
     return {
       label: "Neutral",
       className:
@@ -742,11 +789,11 @@ function getCompressionSeverity(
     }
   }
 
-  if (range >= 9) {
+  if (rangeValue >= 9) {
     return {
-      label: "Extreme",
+      label: "Wide",
       className:
-        "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-200",
+        "bg-muted text-muted-foreground border border-muted-foreground/40",
     }
   }
 

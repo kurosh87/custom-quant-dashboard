@@ -30,6 +30,7 @@ export function ManualApprovalSection({
   timeframeLabel: string
 }) {
   const [selectedRows, setSelectedRows] = React.useState<HistoryRow[]>([])
+  const [sheetRows, setSheetRows] = React.useState<HistoryRow[]>([])
   const [sheetOpen, setSheetOpen] = React.useState(false)
   const [tableKey, setTableKey] = React.useState(0)
 
@@ -38,11 +39,18 @@ export function ManualApprovalSection({
   const clearSelection = React.useCallback(() => {
     setTableKey((prev) => prev + 1)
     setSelectedRows([])
+    setSheetRows([])
   }, [])
+
+  const openSheetWithRows = (rowsToSend: HistoryRow[]) => {
+    if (!rowsToSend.length) return
+    setSheetRows(rowsToSend)
+    setSheetOpen(true)
+  }
 
   const handleApprove = () => {
     if (!hasSelection) return
-    setSheetOpen(true)
+    openSheetWithRows(selectedRows)
   }
 
   const handleReject = () => {
@@ -52,7 +60,7 @@ export function ManualApprovalSection({
   }
 
   const handleConfirmSend = () => {
-    console.log("Sending to 3Commas:", selectedRows)
+    console.log("Sending to 3Commas:", sheetRows)
     setSheetOpen(false)
     clearSelection()
   }
@@ -78,6 +86,7 @@ export function ManualApprovalSection({
             rows={rows}
             timeframeLabel={timeframeLabel}
             onSelectionChange={setSelectedRows}
+            onApproveRow={(row) => openSheetWithRows([row])}
           />
         </CardContent>
         <CardFooter className="flex flex-wrap items-center justify-between gap-3">
@@ -102,13 +111,13 @@ export function ManualApprovalSection({
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Send {selectedRows.length} signal(s) to 3Commas</SheetTitle>
+            <SheetTitle>Send {sheetRows.length} signal(s) to 3Commas</SheetTitle>
             <SheetDescription>
               Review the orders below before confirming the dispatch.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-3 overflow-y-auto px-1 pb-4">
-            {selectedRows.map((row) => (
+            {sheetRows.map((row) => (
               <div
                 key={row.id}
                 className="rounded-xl border border-muted-foreground/20 p-3 text-sm"
@@ -130,7 +139,7 @@ export function ManualApprovalSection({
                 </p>
               </div>
             ))}
-            {!selectedRows.length && (
+            {!sheetRows.length && (
               <p className="text-sm text-muted-foreground">
                 No signals selected.
               </p>
@@ -140,7 +149,7 @@ export function ManualApprovalSection({
             <Button variant="outline" onClick={() => setSheetOpen(false)}>
               Back to queue
             </Button>
-            <Button onClick={handleConfirmSend} disabled={!selectedRows.length}>
+            <Button onClick={handleConfirmSend} disabled={!sheetRows.length}>
               Confirm &amp; send
             </Button>
           </SheetFooter>
