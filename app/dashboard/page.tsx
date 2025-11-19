@@ -924,16 +924,60 @@ function ConfluenceCards() {
     }
   }
 
+  const signalCard = (
+    <div className="rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xl font-semibold">Signal quality</p>
+          <p className="text-xs text-muted-foreground">
+            15m / 1h / 4h composite
+          </p>
+        </div>
+        <Badge variant="secondary" className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+          Oversold stack
+        </Badge>
+      </div>
+      <div className="mt-4 space-y-3">
+        <div className="flex items-center justify-between rounded-2xl border border-yellow-200 bg-white px-4 py-3 font-semibold text-yellow-600 shadow-sm dark:border-yellow-800 dark:bg-yellow-950">
+          <span>Confluence</span>
+          <span>⚡ 3 / 3</span>
+        </div>
+        <div className="rounded-2xl border border-yellow-200/80 bg-white/80 px-4 py-3 text-xs text-muted-foreground dark:bg-yellow-950/20">
+          All frames oversold with compression under 4 pts. Play continuation
+          until BBWP pierces 70%+ and jewel fast &gt; 45.
+        </div>
+        <div className="rounded-2xl border border-dashed border-yellow-300 bg-yellow-50/80 px-4 py-3 text-xs dark:border-yellow-600 dark:bg-yellow-900/20">
+          <p className="font-semibold uppercase tracking-wide text-yellow-700 dark:text-yellow-300">
+            Risk window
+          </p>
+          <p>
+            Fade setup when BBWP &gt; 80% or fib center climbs above 35. Watch
+            for signal downgrades on 1h.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <section className="space-y-6 rounded-3xl border bg-card p-6 shadow-sm">
       <div className="grid gap-4 lg:grid-cols-4">
-        {frames.map((frame) => {
+        {frames.map((frame, index) => {
           const state = bbwpState(frame.bbwp.value, frame.bbwp.ma)
           const style = constrictionStyles[frame.constriction.state] ?? {
             border: "border-muted/60 dark:border-muted/40",
             bg: "bg-muted/30 dark:bg-muted/10",
             text: "text-muted-foreground",
           }
+
+          if (index === 3) {
+            return (
+              <div key="signal-quality" className="h-full">
+                {signalCard}
+              </div>
+            )
+          }
+
           return (
             <div
               key={frame.label}
@@ -1021,38 +1065,7 @@ function ConfluenceCards() {
           )
         })}
       </div>
-      <div className="rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xl font-semibold">Signal quality</p>
-            <p className="text-xs text-muted-foreground">
-              15m / 1h / 4h composite
-            </p>
-          </div>
-          <Badge variant="secondary" className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
-            Oversold stack
-          </Badge>
-        </div>
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between rounded-2xl border border-yellow-200 bg-white px-4 py-3 font-semibold text-yellow-600 shadow-sm dark:border-yellow-800 dark:bg-yellow-950">
-            <span>Confluence</span>
-            <span>⚡ 3 / 3</span>
-          </div>
-          <div className="rounded-2xl border border-yellow-200/80 bg-white/80 px-4 py-3 text-xs text-muted-foreground dark:bg-yellow-950/20">
-            All frames oversold with compression under 4 pts. Play continuation
-            until BBWP pierces 70%+ and jewel fast &gt; 45.
-          </div>
-          <div className="rounded-2xl border border-dashed border-yellow-300 bg-yellow-50/80 px-4 py-3 text-xs dark:border-yellow-600 dark:bg-yellow-900/20">
-            <p className="font-semibold uppercase tracking-wide text-yellow-700 dark:text-yellow-300">
-              Risk window
-            </p>
-            <p>
-              Fade setup when BBWP &gt; 80% or fib center climbs above 35. Watch
-              for signal downgrades on 1h.
-            </p>
-          </div>
-        </div>
-      </div>
+      {frames.length < 4 && <div>{signalCard}</div>}
     </section>
   )
 }
