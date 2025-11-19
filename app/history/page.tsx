@@ -135,9 +135,10 @@ async function fetchSignalHistory(): Promise<Record<string, HistoryRow[]>> {
 
         const timestamp = entry.timestamp ?? toIsoString(payload?.timestamp)
         const recordedAt = entry.received_at ?? new Date().toISOString()
+        const id = toString(entry.id) ?? makeFallbackId()
 
-        return {
-          id: entry.id,
+        const row: HistoryRow = {
+          id,
           symbol: entry.symbol ?? entry.ticker ?? toString(payload?.symbol),
           timeframe: entry.timeframe ?? toString(payload?.timeframe),
           timestamp,
@@ -145,6 +146,7 @@ async function fetchSignalHistory(): Promise<Record<string, HistoryRow[]>> {
           price: coerceNumber(
             entry.price ?? payload?.price ?? payload?.ohlc?.close
           ),
+          btcDeltaPercent: null,
           signalType: entry.signal_type ?? toString(payload?.signal?.type),
           signalStrength: coerceNumber(
             entry.signal_strength ?? payload?.signal?.strength
@@ -173,8 +175,10 @@ async function fetchSignalHistory(): Promise<Record<string, HistoryRow[]>> {
           jewelFast: coerceNumber(entry.jewel_fast ?? payload?.jewel?.fast),
           jewelSlow: coerceNumber(entry.jewel_slow ?? payload?.jewel?.slow),
           jewelHigh: coerceNumber(entry.jewel_high ?? payload?.jewel?.high),
-          payload: payload ?? null,
+          payload: (payload ?? null) as Record<string, unknown> | null,
         }
+
+        return row
       })
     })
   )
@@ -257,4 +261,8 @@ function toString(value: unknown): string | null {
   }
 
   return null
+}
+
+function makeFallbackId() {
+  return Math.random().toString(36).slice(2)
 }
