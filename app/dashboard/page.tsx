@@ -925,7 +925,7 @@ function ConfluenceCards() {
   }
 
   const signalCard = (
-    <div className="flex h-full flex-col justify-between rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
+    <div className="flex h-full flex-col justify-between rounded-3xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xl font-semibold">Signal quality</p>
