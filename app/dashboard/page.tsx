@@ -925,7 +925,7 @@ function ConfluenceCards() {
   }
 
   const signalCard = (
-    <div className="rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xl font-semibold">Signal quality</p>
@@ -937,7 +937,7 @@ function ConfluenceCards() {
           Oversold stack
         </Badge>
       </div>
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 flex-1 space-y-3">
         <div className="flex items-center justify-between rounded-2xl border border-yellow-200 bg-white px-4 py-3 font-semibold text-yellow-600 shadow-sm dark:border-yellow-800 dark:bg-yellow-950">
           <span>Confluence</span>
           <span>⚡ 3 / 3</span>
