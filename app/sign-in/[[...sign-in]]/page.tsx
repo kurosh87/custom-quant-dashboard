@@ -110,14 +110,15 @@ export default async function Page() {
 
   return (
     <div className="grid min-h-svh w-full bg-background lg:grid-cols-2">
-      <div className="relative hidden min-h-svh flex-col justify-between overflow-hidden bg-[#05060a] p-10 text-white lg:flex">
+      <div className="relative hidden min-h-svh flex-col justify-between overflow-hidden bg-background p-10 text-white lg:flex">
         <InteractiveNebulaShader
           hasActiveReminders
           hasUpcomingReminders
           disableCenterDimming
-          className="pointer-events-none"
+          className="pointer-events-none opacity-90"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/70" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(108,71,255,0.35),_transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/80" />
         <div className="relative z-10 flex h-full flex-col">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 backdrop-blur">
