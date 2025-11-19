@@ -156,9 +156,18 @@ const baseColumns: ColumnDef<HistoryRow>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "symbol",
-    header: "Signal",
-    cell: ({ row }) => <HistoryCell item={row.original} />,
+    accessorKey: "timestamp",
+    header: "Time",
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="text-sm font-semibold">
+          {formatTime(row.original.timestamp ?? row.original.recordedAt)}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {formatDate(row.original.timestamp ?? row.original.recordedAt)}
+        </span>
+      </div>
+    ),
     enableHiding: false,
   },
   {
@@ -363,12 +372,10 @@ function DraggableRow({ row }: { row: Row<HistoryRow> }) {
 
 export function HistoryDataTable({
   rows,
-  timeframeLabel,
   onSelectionChange,
   onApproveRow,
 }: {
   rows: HistoryRow[]
-  timeframeLabel: string
   onSelectionChange?: (rows: HistoryRow[]) => void
   onApproveRow?: (row: HistoryRow) => void
 }) {
@@ -471,45 +478,42 @@ export function HistoryDataTable({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6">
-        <div className="text-xl font-semibold">{timeframeLabel}</div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <IconChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">Add Filter</span>
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2 px-4 lg:px-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <IconLayoutColumns />
+              <span className="hidden lg:inline">Customize Columns</span>
+              <span className="lg:hidden">Columns</span>
+              <IconChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {table
+              .getAllColumns()
+              .filter(
+                (column) =>
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide()
+              )
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant="outline" size="sm">
+          <IconPlus />
+          <span className="hidden lg:inline">Add Filter</span>
+        </Button>
       </div>
       <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         <div className="overflow-hidden rounded-lg border">
@@ -691,11 +695,18 @@ function formatNumber(value: number | null | undefined) {
   })
 }
 
+function formatTime(value: string | null) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+}
+
 function formatDate(value: string | null) {
   if (!value) return "—"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
+  return date.toLocaleDateString([], { month: "short", day: "numeric" })
 }
 
 function DeltaCell({ value }: { value: number | null | undefined }) {
