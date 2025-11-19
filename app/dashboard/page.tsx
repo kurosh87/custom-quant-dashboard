@@ -27,12 +27,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import type { HistoryRow } from "@/components/history-data-table"
 import { HistoryTimeframeTabs } from "@/components/history-timeframe-tabs"
 
@@ -125,7 +119,7 @@ export default async function Page() {
                   </TabsContent>
                 </Tabs>
               </div>
-              <ConfluenceCards />
+            <ConfluenceCards />
               <HistoryTimeframeTabs datasets={dashboardDatasets} />
             </div>
           </div>
@@ -160,12 +154,13 @@ const STATIC_DATASET_FALLBACK: DashboardDatasets = {
       id: "static-2h-1",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       price: 91680,
-      signalType: "STRONG_BUY",
+      signalType: "Strong Buy",
       signalStrength: 4,
       buyScore: 78,
       compressionRange: 3.2,
       compressionCenter: 24.1,
       compressionZone: "⬇️ Low",
+      compressionPerfectSetup: true,
       bbwpValue: 26,
       bbwpClassification: "Low",
       jewelFast: 38.4,
@@ -176,17 +171,35 @@ const STATIC_DATASET_FALLBACK: DashboardDatasets = {
       id: "static-2h-2",
       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
       price: 91210,
-      signalType: "BUY",
-      signalStrength: 3,
-      buyScore: 65,
-      compressionRange: 3.8,
-      compressionCenter: 28.4,
-      compressionZone: "⬇️ Low",
+      signalType: "Neutral",
+      signalStrength: 2,
+      buyScore: 45,
+      sellScore: 40,
+      compressionRange: 4.8,
+      compressionCenter: 42.4,
+      compressionZone: "○ Mid",
       bbwpValue: 34,
       bbwpClassification: "Transition",
-      jewelFast: 34.5,
-      jewelSlow: 29.4,
-      jewelHigh: 24.3,
+      jewelFast: 38.5,
+      jewelSlow: 35.4,
+      jewelHigh: 30.3,
+    }),
+    createStaticRow("2h", {
+      id: "static-2h-3",
+      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      price: 90740,
+      signalType: "Strong Sell",
+      signalStrength: 4,
+      buyScore: 22,
+      sellScore: 68,
+      compressionRange: 11.2,
+      compressionCenter: 71.1,
+      compressionZone: "⬆️ High",
+      bbwpValue: 58,
+      bbwpClassification: "Transition",
+      jewelFast: 70.2,
+      jewelSlow: 62.8,
+      jewelHigh: 58.4,
     }),
   ],
   "4h": [
@@ -194,12 +207,13 @@ const STATIC_DATASET_FALLBACK: DashboardDatasets = {
       id: "static-4h-1",
       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
       price: 90550,
-      signalType: "ULTRA_BUY",
+      signalType: "Strong Buy",
       signalStrength: 4,
       buyScore: 82,
       compressionRange: 4.1,
       compressionCenter: 30.2,
       compressionZone: "⬇️ Low",
+      compressionPerfectSetup: true,
       bbwpValue: 48,
       bbwpClassification: "Transition",
       jewelFast: 28.2,
@@ -210,10 +224,10 @@ const STATIC_DATASET_FALLBACK: DashboardDatasets = {
       id: "static-4h-2",
       timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
       price: 89880,
-      signalType: "SELL",
-      signalStrength: 2,
+      signalType: "Strong Sell",
+      signalStrength: 4,
       buyScore: 40,
-      sellScore: 55,
+      sellScore: 75,
       compressionRange: 5.2,
       compressionCenter: 61.5,
       compressionZone: "⬆️ High",
@@ -222,6 +236,23 @@ const STATIC_DATASET_FALLBACK: DashboardDatasets = {
       jewelFast: 66.3,
       jewelSlow: 58.8,
       jewelHigh: 54.1,
+    }),
+    createStaticRow("4h", {
+      id: "static-4h-3",
+      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+      price: 89220,
+      signalType: "Buy",
+      signalStrength: 3,
+      buyScore: 60,
+      sellScore: 28,
+      compressionRange: 3.6,
+      compressionCenter: 26.2,
+      compressionZone: "⬇️ Low",
+      bbwpValue: 22,
+      bbwpClassification: "Low",
+      jewelFast: 32.6,
+      jewelSlow: 26.1,
+      jewelHigh: 22.4,
     }),
   ],
 }
@@ -398,7 +429,7 @@ function createStaticRow(
     jewelFast: overrides.jewelFast ?? 34,
     jewelSlow: overrides.jewelSlow ?? 29,
     jewelHigh: overrides.jewelHigh ?? 23,
-    payload: overrides.payload ?? null,
+    payload: overrides.payload ?? { source: "static sample" },
   }
 }
 
@@ -425,11 +456,11 @@ async function fetchDashboardDatasets(
   const result: DashboardDatasets = {}
 
   for (const timeframe of DASHBOARD_TABLE_TIMEFRAMES) {
-    const { data, error } = await supabase
-      .from("signals")
-      .select(
-        "id, symbol, ticker, price, timeframe, timestamp, received_at, signal_type, signal_strength, signal_buy_score, signal_sell_score, compression_total_range, compression_center, compression_fib_zone, compression_perfect_setup, bbwp_value, bbwp_classification, jewel_fast, jewel_slow, jewel_high"
-      )
+  const { data, error } = await supabase
+    .from("signals")
+    .select(
+      "id, symbol, ticker, price, timeframe, timestamp, received_at, signal_type, signal_strength, signal_buy_score, signal_sell_score, compression_total_range, compression_center, compression_fib_zone, compression_perfect_setup, bbwp_value, bbwp_classification, jewel_fast, jewel_slow, jewel_high, raw_payload"
+    )
       .eq("symbol", DASHBOARD_SYMBOL)
       .eq("timeframe", timeframe)
       .order("timestamp", { ascending: false })
@@ -442,51 +473,66 @@ async function fetchDashboardDatasets(
     }
 
     let rows: HistoryRow[] =
-      data.map((entry) => ({
-        id: toStringValue(entry.id),
-        symbol: entry.symbol ?? entry.ticker ?? null,
-        timeframe: entry.timeframe ?? timeframe,
-        timestamp: entry.timestamp ?? null,
-        recordedAt: entry.received_at ?? null,
-        price: typeof entry.price === "number" ? entry.price : null,
-        btcDeltaPercent: null,
-        signalType: entry.signal_type ?? null,
-        signalStrength:
-          typeof entry.signal_strength === "number"
-            ? entry.signal_strength
-            : null,
-        buyScore:
-          typeof entry.signal_buy_score === "number"
-            ? entry.signal_buy_score
-            : null,
-        sellScore:
-          typeof entry.signal_sell_score === "number"
-            ? entry.signal_sell_score
-            : null,
-        compressionRange:
-          typeof entry.compression_total_range === "number"
-            ? entry.compression_total_range
-            : null,
-        compressionCenter:
-          typeof entry.compression_center === "number"
-            ? entry.compression_center
-            : null,
-        compressionZone: entry.compression_fib_zone ?? null,
-        compressionPerfectSetup:
-          typeof entry.compression_perfect_setup === "boolean"
-            ? entry.compression_perfect_setup
-            : null,
-        bbwpValue:
-          typeof entry.bbwp_value === "number" ? entry.bbwp_value : null,
-        bbwpClassification: entry.bbwp_classification ?? null,
-        jewelFast:
-          typeof entry.jewel_fast === "number" ? entry.jewel_fast : null,
-        jewelSlow:
-          typeof entry.jewel_slow === "number" ? entry.jewel_slow : null,
-        jewelHigh:
-          typeof entry.jewel_high === "number" ? entry.jewel_high : null,
-        payload: null,
-      })) ?? []
+      data.map((entry) => {
+        const derivedRange = deriveRangeFromJewel(
+          entry.jewel_fast,
+          entry.jewel_slow,
+          entry.jewel_high
+        )
+        const signalLabel = entry.signal_type?.toUpperCase() ?? ""
+        return {
+          id: toStringValue(entry.id),
+          symbol: entry.symbol ?? entry.ticker ?? null,
+          timeframe: entry.timeframe ?? timeframe,
+          timestamp: entry.timestamp ?? null,
+          recordedAt: entry.received_at ?? null,
+          price: typeof entry.price === "number" ? entry.price : null,
+          btcDeltaPercent: null,
+          signalType: entry.signal_type ?? null,
+          signalStrength:
+            typeof entry.signal_strength === "number"
+              ? entry.signal_strength
+              : null,
+          buyScore:
+            typeof entry.signal_buy_score === "number"
+              ? entry.signal_buy_score
+              : null,
+          sellScore:
+            typeof entry.signal_sell_score === "number"
+              ? entry.signal_sell_score
+              : null,
+          compressionRange:
+            typeof entry.compression_total_range === "number"
+              ? entry.compression_total_range
+              : derivedRange,
+          compressionCenter:
+            typeof entry.compression_center === "number"
+              ? entry.compression_center
+              : null,
+          compressionZone: entry.compression_fib_zone ?? null,
+          compressionPerfectSetup:
+            typeof entry.compression_perfect_setup === "boolean"
+              ? entry.compression_perfect_setup
+              : Boolean(
+                  derivedRange !== null &&
+                    derivedRange <= 3 &&
+                    signalLabel.includes("BUY")
+                ),
+          bbwpValue:
+            typeof entry.bbwp_value === "number" ? entry.bbwp_value : null,
+          bbwpClassification: entry.bbwp_classification ?? null,
+          jewelFast:
+            typeof entry.jewel_fast === "number" ? entry.jewel_fast : null,
+          jewelSlow:
+            typeof entry.jewel_slow === "number" ? entry.jewel_slow : null,
+          jewelHigh:
+            typeof entry.jewel_high === "number" ? entry.jewel_high : null,
+          payload:
+            (entry.raw_payload as Record<string, unknown> | null) ?? {
+              note: "Awaiting realtime payload",
+            },
+        }
+      }) ?? []
 
     if (rows.length === 0) {
       rows = await loadCsvHistoryRows(timeframe, limit)
@@ -499,7 +545,7 @@ async function fetchDashboardDatasets(
       }))
     }
 
-    result[timeframe] = rows
+    result[timeframe] = applyPriceDelta(rows)
   }
 
   return result
@@ -664,30 +710,6 @@ function toStringValue(value: unknown) {
   return value ? String(value) : Math.random().toString(36).slice(2)
 }
 
-function applyDeltaToDatasets(
-  datasets: DashboardDatasets,
-  deltaPercent: number | null
-) {
-  if (deltaPercent === null) {
-    return datasets
-  }
-  const mapped: DashboardDatasets = {}
-  for (const [timeframe, rows] of Object.entries(datasets)) {
-    mapped[timeframe] = rows.map((row) => ({
-      ...row,
-      btcDeltaPercent: jitterDelta(deltaPercent),
-    }))
-  }
-  return mapped
-}
-
-function jitterDelta(base: number) {
-  const variation = Math.max(Math.abs(base) * 0.15, 0.2)
-  const offset = (Math.random() * 2 - 1) * variation
-  const next = base + offset
-  return Number(Math.max(-99, Math.min(99, next)).toFixed(2))
-}
-
 async function loadCsvHistoryRows(
   timeframe: string,
   limit: number
@@ -757,7 +779,7 @@ async function loadCsvHistoryRows(
         jewelFast: fast,
         jewelSlow: slow,
         jewelHigh: high,
-        payload: null,
+        payload: { source: "CSV backfill" },
       })
     }
 
@@ -766,6 +788,49 @@ async function loadCsvHistoryRows(
     console.error("CSV history load error", timeframe, error)
     return []
   }
+}
+
+function applyPriceDelta(rows: HistoryRow[]) {
+  if (!rows.length) {
+    return rows
+  }
+
+  return rows.map((row, index) => {
+    const previous = rows[index + 1]
+    if (
+      row.price === null ||
+      row.price === undefined ||
+      !previous ||
+      previous.price === null ||
+      previous.price === undefined
+    ) {
+      return { ...row, btcDeltaPercent: null }
+    }
+
+    const delta = ((row.price - previous.price) / previous.price) * 100
+    return { ...row, btcDeltaPercent: Number(delta.toFixed(2)) }
+  })
+}
+
+function deriveRangeFromJewel(
+  fast: unknown,
+  slow: unknown,
+  high: unknown
+) {
+  const values = [fast, slow, high]
+    .map((val) =>
+      typeof val === "number" && Number.isFinite(val) ? val : null
+    )
+    .filter((val): val is number => val !== null)
+
+  if (values.length < 2) {
+    return null
+  }
+
+  return (
+    Math.max(...values) -
+    Math.min(...values)
+  )
 }
 
 function ConfluenceCards() {
@@ -825,8 +890,6 @@ function ConfluenceCards() {
         text: "text-red-600 dark:text-red-300",
         badge: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-200",
         description: "BBW is in the top 5% of the lookback window. Trend may be nearing exhaustion; watch for macro turns.",
-        border: "border-red-200/70 dark:border-red-900/40",
-        bg: "bg-red-50/60 dark:bg-red-950/10",
       }
     }
     if (value >= 70) {
@@ -835,8 +898,6 @@ function ConfluenceCards() {
         text: "text-red-600 dark:text-red-300",
         badge: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-200",
         description: "BBW percentile is rising; volatility is expanding and range moves can accelerate.",
-        border: "border-red-200/70 dark:border-red-900/40",
-        bg: "bg-red-50/60 dark:bg-red-950/10",
       }
     }
     if (value >= 30) {
@@ -845,8 +906,6 @@ function ConfluenceCards() {
         text: "text-amber-600 dark:text-amber-300",
         badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-200",
         description: "Percentile is mid-cycle. Track BBWP vs its moving average for early breakout cues.",
-        border: "border-amber-200/70 dark:border-amber-900/40",
-        bg: "bg-amber-50/40 dark:bg-amber-950/10",
       }
     }
     if (value <= 5) {
@@ -855,8 +914,6 @@ function ConfluenceCards() {
         text: "text-sky-600 dark:text-sky-300",
         badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-200",
         description: "BBW is in the lowest 5% of history. Expect violent expansion once percentile recaptures its MA.",
-        border: "border-sky-200/70 dark:border-sky-900/40",
-        bg: "bg-sky-50/70 dark:bg-sky-950/15",
       }
     }
     return {
@@ -864,28 +921,23 @@ function ConfluenceCards() {
       text: "text-sky-600 dark:text-sky-300",
       badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-200",
       description: "BBW percentile still depressed. Monitoring for percentile > MA to confirm breakout.",
-      border: "border-sky-200/70 dark:border-sky-900/40",
-      bg: "bg-sky-50/50 dark:bg-sky-950/10",
     }
   }
 
   return (
-    <Accordion type="single" collapsible defaultValue="confluence">
-      <AccordionItem
-        value="confluence"
-        className="overflow-hidden rounded-3xl border bg-card shadow-sm"
-      >
-        <AccordionTrigger className="px-6 py-4 text-left">
-          <p className="text-2xl font-semibold">Confluence analysis</p>
-        </AccordionTrigger>
-        <AccordionContent className="px-6 pb-6">
-          <div className="grid gap-4 lg:grid-cols-4">
-            {frames.map((frame) => {
-              const state = bbwpState(frame.bbwp.value, frame.bbwp.ma)
-              return (
-                <div
-                  key={frame.label}
-              className="rounded-2xl border border-emerald-200/60 bg-emerald-50/30 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/10"
+    <section className="space-y-6 rounded-3xl border bg-card p-6 shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-4">
+        {frames.map((frame) => {
+          const state = bbwpState(frame.bbwp.value, frame.bbwp.ma)
+          const style = constrictionStyles[frame.constriction.state] ?? {
+            border: "border-muted/60 dark:border-muted/40",
+            bg: "bg-muted/30 dark:bg-muted/10",
+            text: "text-muted-foreground",
+          }
+          return (
+            <div
+              key={frame.label}
+              className="rounded-2xl border border-emerald-200/60 bg-emerald-50/20 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/10"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -895,19 +947,17 @@ function ConfluenceCards() {
               </div>
               <div className="mt-4 space-y-3 text-sm">
                 <div
-                  className={`rounded-2xl border px-3 py-2 text-xs font-semibold ${constrictionStyles[frame.constriction.state]?.border ?? ""} ${
-                    constrictionStyles[frame.constriction.state]?.bg ?? ""
-                  } flex items-center justify-between`}
+                  className={`rounded-2xl border px-3 py-2 text-xs font-semibold ${style.border} ${style.bg} flex items-center justify-between`}
                 >
                   <div>
                     <p className="text-muted-foreground uppercase tracking-wide">
                       Constriction
                     </p>
-                    <p className={`${constrictionStyles[frame.constriction.state]?.text ?? ""}`}>
-                      {frame.compression}
-                    </p>
+                    <p className={style.text}>{frame.compression}</p>
                   </div>
-                  <span className="text-muted-foreground">{frame.constriction.metric}</span>
+                  <span className="text-muted-foreground">
+                    {frame.constriction.metric}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl border border-muted/60 bg-white/70 px-3 py-2 text-xs dark:bg-muted/10">
                   <span className="text-muted-foreground uppercase tracking-wide">
@@ -915,7 +965,7 @@ function ConfluenceCards() {
                   </span>
                   <span className="font-semibold">{frame.zone}</span>
                 </div>
-                <div className="rounded-2xl border border-muted/60 bg-white/70 px-3 py-2 dark:bg-muted/10">
+                <div className="rounded-2xl border border-muted/60 bg-white/70 px-3 py-2 text-xs dark:bg-muted/10">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
                     Jewel lines
                   </p>
@@ -970,39 +1020,39 @@ function ConfluenceCards() {
             </div>
           )
         })}
-        <div className="rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xl font-semibold">Signal Quality</p>
-              <p className="text-xs text-muted-foreground">
-                15m / 1h / 4h composite
-              </p>
-            </div>
-            <Badge variant="secondary" className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
-              Oversold stack
-            </Badge>
+      </div>
+      <div className="rounded-2xl border border-yellow-200/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-50 p-4 text-sm dark:border-yellow-900/40 dark:from-yellow-950/10 dark:via-amber-900/10 dark:to-rose-950/10">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xl font-semibold">Signal quality</p>
+            <p className="text-xs text-muted-foreground">
+              15m / 1h / 4h composite
+            </p>
           </div>
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between rounded-2xl border border-yellow-200 bg-white px-4 py-3 font-semibold text-yellow-600 shadow-sm dark:border-yellow-800 dark:bg-yellow-950">
-              <span>Confluence</span>
-              <span>⚡ 3 / 3</span>
-            </div>
-            <div className="rounded-2xl border border-yellow-200/80 bg-white/80 px-4 py-3 text-xs text-muted-foreground dark:bg-yellow-950/20">
-              All frames oversold with compression under 4 pts. Play continuation until BBWP pierces 70%+ and jewel fast &gt; 45.
-            </div>
-            <div className="rounded-2xl border border-dashed border-yellow-300 bg-yellow-50/80 px-4 py-3 text-xs dark:border-yellow-600 dark:bg-yellow-900/20">
-              <p className="font-semibold uppercase tracking-wide text-yellow-700 dark:text-yellow-300">
-                Risk window
-              </p>
-              <p>
-                Fade setup when BBWP &gt; 80% or fib center climbs above 35. Watch for signal downgrades on 1h.
-              </p>
-            </div>
+          <Badge variant="secondary" className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+            Oversold stack
+          </Badge>
+        </div>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between rounded-2xl border border-yellow-200 bg-white px-4 py-3 font-semibold text-yellow-600 shadow-sm dark:border-yellow-800 dark:bg-yellow-950">
+            <span>Confluence</span>
+            <span>⚡ 3 / 3</span>
+          </div>
+          <div className="rounded-2xl border border-yellow-200/80 bg-white/80 px-4 py-3 text-xs text-muted-foreground dark:bg-yellow-950/20">
+            All frames oversold with compression under 4 pts. Play continuation
+            until BBWP pierces 70%+ and jewel fast &gt; 45.
+          </div>
+          <div className="rounded-2xl border border-dashed border-yellow-300 bg-yellow-50/80 px-4 py-3 text-xs dark:border-yellow-600 dark:bg-yellow-900/20">
+            <p className="font-semibold uppercase tracking-wide text-yellow-700 dark:text-yellow-300">
+              Risk window
+            </p>
+            <p>
+              Fade setup when BBWP &gt; 80% or fib center climbs above 35. Watch
+              for signal downgrades on 1h.
+            </p>
           </div>
         </div>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  </Accordion>
+      </div>
+    </section>
   )
 }
