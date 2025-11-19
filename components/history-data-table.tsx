@@ -83,6 +83,7 @@ export const historySchema = z.object({
   timestamp: z.string().nullable(),
   recordedAt: z.string().nullable(),
   price: z.number().nullable(),
+  btcDeltaPercent: z.number().nullable(),
   signalType: z.string().nullable(),
   signalStrength: z.number().nullable(),
   buyScore: z.number().nullable(),
@@ -191,6 +192,13 @@ const columns: ColumnDef<HistoryRow>[] = [
     ),
   },
   {
+    accessorKey: "btcDeltaPercent",
+    header: "BTC 24h Δ",
+    cell: ({ row }) => (
+      <DeltaCell value={row.original.btcDeltaPercent} />
+    ),
+  },
+  {
     id: "scores",
     header: "Scores",
     cell: ({ row }) => (
@@ -200,6 +208,25 @@ const columns: ColumnDef<HistoryRow>[] = [
         </span>
         <span className="text-destructive">
           Sell {row.original.sellScore ?? "—"}
+        </span>
+      </div>
+    ),
+  },
+  {
+    id: "jewelLines",
+    header: "Jewel Lines",
+    cell: ({ row }) => (
+      <div className="text-xs font-medium">
+        <span className="text-cyan-500">
+          {formatNumber(row.original.jewelFast)}
+        </span>
+        {", "}
+        <span className="text-pink-500">
+          {formatNumber(row.original.jewelSlow)}
+        </span>
+        {", "}
+        <span className="text-yellow-500">
+          {formatNumber(row.original.jewelHigh)}
         </span>
       </div>
     ),
@@ -234,39 +261,42 @@ const columns: ColumnDef<HistoryRow>[] = [
   },
   {
     accessorKey: "compressionPerfectSetup",
-    header: "Setup",
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.compressionPerfectSetup ? "default" : "secondary"}
-        className="w-fit"
-      >
-        {row.original.compressionPerfectSetup ? "Perfect" : "Standard"}
-      </Badge>
-    ),
+    header: "Signal",
+    cell: ({ row }) => {
+      const signal = row.original.signalType?.toUpperCase() ?? ""
+      const strength = row.original.signalStrength ?? 0
+      const isSell = signal.includes("SELL")
+      const isBuy = signal.includes("BUY")
+
+      let label = "NEUTRAL"
+      let className =
+        "bg-muted text-muted-foreground border border-muted-foreground/40"
+
+      if (isBuy) {
+        label = strength >= 4 ? "STRONG BUY" : "BUY"
+        className =
+          strength >= 4
+            ? "bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 dark:bg-emerald-900/20 dark:text-emerald-300"
+            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+      } else if (isSell) {
+        label = strength >= 4 ? "STRONG SELL" : "SELL"
+        className =
+          strength >= 4
+            ? "bg-red-600/10 text-red-700 border border-red-600/30 dark:bg-red-900/20 dark:text-red-200"
+            : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+      }
+
+      return (
+        <Badge className={`w-fit px-3 ${className}`}>
+          {label}
+        </Badge>
+      )
+    },
   },
   {
     id: "payload",
     header: "Payload",
     cell: ({ row }) => <PayloadDrawer item={row.original} />,
-  },
-  {
-    id: "jewelLines",
-    header: "Jewel Lines",
-    cell: ({ row }) => (
-      <div className="text-xs font-medium">
-        <span className="text-cyan-500">
-          {formatNumber(row.original.jewelFast)}
-        </span>
-        {", "}
-        <span className="text-pink-500">
-          {formatNumber(row.original.jewelSlow)}
-        </span>
-        {", "}
-        <span className="text-yellow-500">
-          {formatNumber(row.original.jewelHigh)}
-        </span>
-      </div>
-    ),
   },
   {
     id: "actions",
@@ -395,9 +425,7 @@ export function HistoryDataTable({
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6">
-        <div className="text-xl font-semibold">
-          {timeframeLabel} Signals
-        </div>
+        <div className="text-xl font-semibold">{timeframeLabel}</div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -593,4 +621,20 @@ function formatDate(value: string | null) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString()
+}
+
+function DeltaCell({ value }: { value: number | null | undefined }) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return <span className="text-muted-foreground">—</span>
+  }
+  const positive = value >= 0
+  return (
+    <div
+      className={`text-right text-sm font-semibold ${
+        positive ? "text-emerald-500" : "text-red-500"
+      }`}
+    >
+      {positive ? "▲" : "▼"} {Math.abs(value).toFixed(2)}%
+    </div>
+  )
 }
