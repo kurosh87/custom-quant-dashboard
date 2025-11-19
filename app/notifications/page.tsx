@@ -10,9 +10,9 @@ import {
 } from "@tabler/icons-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { HistoryDataTable, type HistoryRow } from "@/components/history-data-table"
+import type { HistoryRow } from "@/components/history-data-table"
 import { SiteHeader } from "@/components/site-header"
-import { Badge } from "@/components/ui/badge"
+import { ManualApprovalSection } from "@/components/manual-approval-section"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -164,25 +164,12 @@ export default async function NotificationsPage() {
             </Card>
 
             <div className="grid gap-4 xl:grid-cols-[3fr,1fr]">
-              <Card className="xl:order-1">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <CardTitle>Manual approval queue</CardTitle>
-                      <CardDescription>
-                        Select the rows you want to push downstream.
-                      </CardDescription>
-                    </div>
-                    <Badge variant="secondary">{REVIEW_LABEL}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <HistoryDataTable
-                    rows={pendingSignals}
-                    timeframeLabel={REVIEW_LABEL}
-                  />
-                </CardContent>
-              </Card>
+              <div className="xl:order-1">
+                <ManualApprovalSection
+                  rows={pendingSignals}
+                  timeframeLabel={REVIEW_LABEL}
+                />
+              </div>
               <Card className="order-first xl:order-2">
                 <CardHeader>
                   <CardTitle>Approval workflow</CardTitle>

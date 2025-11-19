@@ -162,27 +162,6 @@ const columns: ColumnDef<HistoryRow>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "signalType",
-    header: "Type",
-    cell: ({ row }) => (
-      <div className="flex flex-col gap-0.5">
-        <Badge
-          variant={
-            row.original.signalType?.includes("SELL")
-              ? "secondary"
-              : "default"
-          }
-          className="w-fit uppercase"
-        >
-          {row.original.signalType ?? "—"}
-        </Badge>
-        <span className="text-muted-foreground text-xs">
-          Strength {row.original.signalStrength ?? "—"}
-        </span>
-      </div>
-    ),
-  },
-  {
     accessorKey: "price",
     header: "Price",
     cell: ({ row }) => (
@@ -199,17 +178,13 @@ const columns: ColumnDef<HistoryRow>[] = [
     ),
   },
   {
-    id: "scores",
-    header: "Scores",
+    id: "fibReading",
+    header: "Fib Reading",
     cell: ({ row }) => (
-      <div className="flex flex-col text-xs font-semibold">
-        <span className="text-emerald-600">
-          Buy {row.original.buyScore ?? "—"}
-        </span>
-        <span className="text-destructive">
-          Sell {row.original.sellScore ?? "—"}
-        </span>
-      </div>
+      <FibCell
+        zone={row.original.compressionZone}
+        center={row.original.compressionCenter}
+      />
     ),
   },
   {
@@ -235,29 +210,64 @@ const columns: ColumnDef<HistoryRow>[] = [
     id: "compression",
     header: "Compression",
     cell: ({ row }) => (
-      <div className="flex flex-col text-xs">
-        <span className="font-semibold">
-          Range {formatNumber(row.original.compressionRange)}
-        </span>
-        <span className="text-muted-foreground">
-          {row.original.compressionZone ?? "—"}
-        </span>
-      </div>
+      <CompressionCell
+        range={row.original.compressionRange}
+        perfect={Boolean(row.original.compressionPerfectSetup)}
+      />
     ),
   },
   {
     accessorKey: "bbwpClassification",
     header: "BBWP",
-    cell: ({ row }) => (
-      <div className="flex flex-col text-xs">
-        <span className="font-semibold">
-          {row.original.bbwpClassification ?? "—"}
-        </span>
-        <span className="text-muted-foreground">
-          {formatNumber(row.original.bbwpValue)}
-        </span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const value = row.original.bbwpValue
+      const ma =
+        typeof value === "number"
+          ? Math.max(0, Math.min(100, value - 13))
+          : null
+
+      const state = (() => {
+        if (value === null || Number.isNaN(value)) {
+          return {
+            label: "—",
+            className: "text-muted-foreground",
+          }
+        }
+        if (value >= 70) {
+          return {
+            label: "Expansion",
+            className: "text-red-500",
+          }
+        }
+        if (value <= 5) {
+          return {
+            label: "Volatility Floor",
+            className: "text-sky-600",
+          }
+        }
+        return {
+          label: "Contraction",
+          className: "text-amber-600",
+        }
+      })()
+
+      return (
+        <div className="flex flex-col text-xs">
+          <span className="font-semibold">
+            {typeof value === "number" ? `${value.toFixed(0)}%` : "—"}
+            {ma !== null && (
+              <>
+                {" "}
+                <span className="text-muted-foreground">
+                  vs MA {ma.toFixed(0)}%
+                </span>
+              </>
+            )}
+          </span>
+          <span className={state.className}>{state.label}</span>
+        </div>
+      )
+    },
   },
   {
     accessorKey: "compressionPerfectSetup",
@@ -353,9 +363,11 @@ function DraggableRow({ row }: { row: Row<HistoryRow> }) {
 export function HistoryDataTable({
   rows,
   timeframeLabel,
+  onSelectionChange,
 }: {
   rows: HistoryRow[]
   timeframeLabel: string
+  onSelectionChange?: (rows: HistoryRow[]) => void
 }) {
   const [data, setData] = React.useState(() => rows)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -410,6 +422,15 @@ export function HistoryDataTable({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  const selectedRows = React.useMemo(
+    () => table.getSelectedRowModel().rows.map((row) => row.original),
+    [table, rowSelection]
+  )
+
+  React.useEffect(() => {
+    onSelectionChange?.(selectedRows)
+  }, [selectedRows, onSelectionChange])
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -568,13 +589,41 @@ export function HistoryDataTable({
 
 function HistoryCell({ item }: { item: HistoryRow }) {
   const primaryTime = item.timestamp ?? item.recordedAt ?? null
+  const label = (item.signalType ?? "Neutral").toUpperCase()
+  const strength = item.signalStrength ?? 0
+
+  const pill = (() => {
+    const base = label.includes("SELL")
+    const strong = strength >= 4
+    if (label.includes("BUY")) {
+      return {
+        text: strong ? "Strong Buy" : "Buy",
+        className: strong
+          ? "bg-emerald-600/10 text-emerald-600 border border-emerald-600/30"
+          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
+      }
+    }
+    if (label.includes("SELL")) {
+      return {
+        text: strong ? "Strong Sell" : "Sell",
+        className: strong
+          ? "bg-red-600/10 text-red-600 border border-red-600/30"
+          : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300",
+      }
+    }
+    return {
+      text: "Neutral",
+      className:
+        "bg-muted text-muted-foreground border border-muted-foreground/40",
+    }
+  })()
+
   return (
     <div className="flex flex-col gap-1">
-      <div className="text-base font-semibold leading-none">
-        {item.symbol ?? "Unknown"}
-      </div>
-      <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs leading-none">
-        <Badge variant="outline">{item.timeframe ?? "—"}</Badge>
+      <Badge className={`w-fit px-3 text-xs font-semibold ${pill.className}`}>
+        {pill.text}
+      </Badge>
+      <div className="text-muted-foreground text-xs leading-none">
         {formatDate(primaryTime)}
       </div>
     </div>
@@ -625,16 +674,121 @@ function formatDate(value: string | null) {
 
 function DeltaCell({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined || Number.isNaN(value)) {
-    return <span className="text-muted-foreground">—</span>
+    return (
+      <Badge className="bg-muted text-muted-foreground">—</Badge>
+    )
   }
   const positive = value >= 0
   return (
-    <div
-      className={`text-right text-sm font-semibold ${
-        positive ? "text-emerald-500" : "text-red-500"
+    <Badge
+      className={`flex items-center gap-1 border ${
+        positive
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+          : "border-red-500/30 bg-red-500/10 text-red-600"
       }`}
     >
       {positive ? "▲" : "▼"} {Math.abs(value).toFixed(2)}%
-    </div>
+    </Badge>
+  )
+}
+
+function CompressionCell({
+  range,
+  perfect,
+}: {
+  range: number | null | undefined
+  perfect: boolean
+}) {
+  const severity = getCompressionSeverity(range, perfect)
+
+  if (range === null || range === undefined || Number.isNaN(range)) {
+    return (
+      <div className="flex flex-col text-xs text-muted-foreground">
+        <span>Range —</span>
+      </div>
+    )
+  }
+
+  return (
+    <Badge className={`flex items-center gap-2 text-xs ${severity.className}`}>
+      {severity.label} · {formatNumber(range)}
+    </Badge>
+  )
+}
+
+function getCompressionSeverity(
+  range: number | null | undefined,
+  perfect: boolean
+) {
+  if (
+    perfect ||
+    (range !== null &&
+      range !== undefined &&
+      !Number.isNaN(range) &&
+      range <= 3)
+  ) {
+    return {
+      label: "Tight",
+      className:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
+    }
+  }
+
+  if (range === null || range === undefined || Number.isNaN(range)) {
+    return {
+      label: "Neutral",
+      className:
+        "bg-muted text-muted-foreground border border-muted-foreground/40",
+    }
+  }
+
+  if (range >= 9) {
+    return {
+      label: "Extreme",
+      className:
+        "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-200",
+    }
+  }
+
+  return {
+    label: "Neutral",
+    className:
+      "bg-muted text-muted-foreground border border-muted-foreground/40",
+  }
+}
+
+function FibCell({
+  zone,
+  center,
+}: {
+  zone: string | null
+  center: number | null | undefined
+}) {
+  const numericCenter =
+    center === null || center === undefined || Number.isNaN(center)
+      ? null
+      : Number(center.toFixed(1))
+
+  let label = zone ?? "—"
+  if (label.includes("Mid")) {
+    label = "Neutral"
+  }
+
+  const color =
+    numericCenter !== null && numericCenter >= 50
+      ? "text-red-500"
+      : "text-emerald-600"
+
+  return (
+    <Badge
+      className={`flex items-center gap-1 border ${
+        numericCenter !== null && numericCenter >= 50
+          ? "border-red-500/30 bg-red-500/10 text-red-600"
+          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+      }`}
+    >
+      {numericCenter !== null && numericCenter >= 50 ? "▲" : "▼"} {label}{" "}
+      {numericCenter !== null ? numericCenter : ""}
+    </Badge>
   )
 }
