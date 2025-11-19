@@ -285,40 +285,6 @@ const baseColumns: ColumnDef<HistoryRow>[] = [
     },
   },
   {
-    accessorKey: "compressionPerfectSetup",
-    header: "Signal",
-    cell: ({ row }) => {
-      const signal = row.original.signalType?.toUpperCase() ?? ""
-      const strength = row.original.signalStrength ?? 0
-      const isSell = signal.includes("SELL")
-      const isBuy = signal.includes("BUY")
-
-      let label = "NEUTRAL"
-      let className =
-        "bg-muted text-muted-foreground border border-muted-foreground/40"
-
-      if (isBuy) {
-        label = strength >= 4 ? "STRONG BUY" : "BUY"
-        className =
-          strength >= 4
-            ? "bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 dark:bg-emerald-900/20 dark:text-emerald-300"
-            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
-      } else if (isSell) {
-        label = strength >= 4 ? "STRONG SELL" : "SELL"
-        className =
-          strength >= 4
-            ? "bg-red-600/10 text-red-700 border border-red-600/30 dark:bg-red-900/20 dark:text-red-200"
-            : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-      }
-
-      return (
-        <Badge className={`w-fit px-3 ${className}`}>
-          {label}
-        </Badge>
-      )
-    },
-  },
-  {
     id: "payload",
     header: "Payload",
     cell: ({ row }) => <PayloadDrawer item={row.original} />,
@@ -483,7 +449,7 @@ export function HistoryDataTable({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-end gap-2 px-4 lg:px-6">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -520,7 +486,7 @@ export function HistoryDataTable({
           <span className="hidden lg:inline">Add Filter</span>
         </Button>
       </div>
-      <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+      <div className="relative flex flex-col gap-4 overflow-auto">
         <div className="overflow-hidden rounded-lg border">
           <DndContext
             collisionDetection={closestCenter}
