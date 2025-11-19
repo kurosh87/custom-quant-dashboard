@@ -345,10 +345,12 @@ export function HistoryDataTable({
   rows,
   onSelectionChange,
   onApproveRow,
+  toolbarExtras,
 }: {
   rows: HistoryRow[]
   onSelectionChange?: (rows: HistoryRow[]) => void
   onApproveRow?: (row: HistoryRow) => void
+  toolbarExtras?: React.ReactNode
 }) {
   const [data, setData] = React.useState(() => rows)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -449,42 +451,49 @@ export function HistoryDataTable({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <IconLayoutColumns />
-              <span className="hidden lg:inline">Customize Columns</span>
-              <span className="lg:hidden">Columns</span>
-              <IconChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== "undefined" &&
-                  column.getCanHide()
-              )
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button variant="outline" size="sm">
-          <IconPlus />
-          <span className="hidden lg:inline">Add Filter</span>
-        </Button>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <IconLayoutColumns />
+                <span className="hidden lg:inline">Customize Columns</span>
+                <span className="lg:hidden">Columns</span>
+                <IconChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {table
+                .getAllColumns()
+                .filter(
+                  (column) =>
+                    typeof column.accessorFn !== "undefined" &&
+                    column.getCanHide()
+                )
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm">
+            <IconPlus />
+            <span className="hidden lg:inline">Add Filter</span>
+          </Button>
+        </div>
+        {toolbarExtras ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {toolbarExtras}
+          </div>
+        ) : null}
       </div>
       <div className="relative flex flex-col gap-4 overflow-auto">
         <div className="overflow-hidden rounded-lg border">

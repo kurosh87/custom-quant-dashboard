@@ -29,27 +29,21 @@ export function HistoryTimeframeTabs({
   const [value, setValue] = React.useState(TIMEFRAMES[0].value)
 
   return (
-    <Tabs
-      value={value}
-      onValueChange={setValue}
-      className="gap-0"
-    >
-      <div className="flex items-center justify-between">
-        <TabsList className="flex w-fit flex-wrap gap-2 border border-border/50 bg-muted/40 px-2 py-2">
-          {TIMEFRAMES.map((tf) => (
-            <TabsTrigger
-              key={tf.value}
-              value={tf.value}
-              className="px-4 py-2"
-            >
-              {tf.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
+    <Tabs value={value} onValueChange={setValue}>
       {TIMEFRAMES.map((tf) => (
-        <TabsContent key={tf.value} value={tf.value} className="mt-0">
-          <HistoryDataTable rows={datasets[tf.value] ?? []} />
+        <TabsContent key={tf.value} value={tf.value}>
+          <HistoryDataTable
+            rows={datasets[tf.value] ?? []}
+            toolbarExtras={
+              <TabsList>
+                {TIMEFRAMES.map((listTf) => (
+                  <TabsTrigger key={listTf.value} value={listTf.value}>
+                    {listTf.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            }
+          />
         </TabsContent>
       ))}
     </Tabs>
