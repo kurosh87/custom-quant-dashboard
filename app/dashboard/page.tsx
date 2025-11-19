@@ -88,7 +88,7 @@ export default async function Page() {
                 fearGreed={fearGreed}
                 price={bitcoinPrice}
               />
-              <div className="grid gap-4 lg:grid-cols-[3fr,1fr]">
+              <div className="grid gap-4">
                 <Tabs defaultValue="15m" className="flex flex-col gap-4">
                   <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @md:flex">
                     <TabsTrigger value="15m">15 Minute</TabsTrigger>
@@ -962,22 +962,13 @@ function ConfluenceCards() {
   return (
     <section className="space-y-6 rounded-3xl border bg-card p-6 shadow-sm">
       <div className="grid gap-4 lg:grid-cols-4">
-        {frames.map((frame, index) => {
+        {frames.map((frame) => {
           const state = bbwpState(frame.bbwp.value, frame.bbwp.ma)
           const style = constrictionStyles[frame.constriction.state] ?? {
             border: "border-muted/60 dark:border-muted/40",
             bg: "bg-muted/30 dark:bg-muted/10",
             text: "text-muted-foreground",
           }
-
-          if (index === 3) {
-            return (
-              <div key="signal-quality" className="h-full">
-                {signalCard}
-              </div>
-            )
-          }
-
           return (
             <div
               key={frame.label}
@@ -1064,8 +1055,8 @@ function ConfluenceCards() {
             </div>
           )
         })}
+        <div className="h-full">{signalCard}</div>
       </div>
-      {frames.length < 4 && <div>{signalCard}</div>}
     </section>
   )
 }
