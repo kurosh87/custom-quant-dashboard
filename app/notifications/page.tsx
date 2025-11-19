@@ -276,91 +276,10 @@ export default async function NotificationsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle>Automation playbooks</CardTitle>
-                    <CardDescription>
-                      Quickly see what runs automatically vs. manually.
-                    </CardDescription>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    New playbook
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {automationPlaybooks.map((playbook) => (
-                    <div
-                      key={playbook.id}
-                      className="rounded-2xl border border-muted-foreground/20 p-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold">{playbook.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {playbook.description}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className={
-                            playbook.mode === "Automated"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
-                              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200"
-                          }
-                        >
-                          {playbook.mode}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 grid gap-2 text-xs font-medium sm:grid-cols-3">
-                        <Badge variant="outline">{playbook.timeframe}</Badge>
-                        <Badge variant="outline">{playbook.action}</Badge>
-                        <Badge variant="outline">{playbook.approvals}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle>Notification channels</CardTitle>
-                    <CardDescription>
-                      Where alerts publish before approval.
-                    </CardDescription>
-                  </div>
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <IconWebhook className="size-4" />
-                    Add channel
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {channelSettings.map((channel) => (
-                    <div
-                      key={channel.id}
-                      className="rounded-2xl border border-muted-foreground/20 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold">{channel.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {channel.description}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{channel.cadence}</Badge>
-                      </div>
-                      <Button
-                        variant={channel.active ? "secondary" : "outline"}
-                        size="sm"
-                        className="mt-3 w-full"
-                      >
-                        {channel.active ? "Enabled" : "Enable"}
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+            <div className="rounded-2xl border border-muted-foreground/20 bg-card p-6 text-sm text-muted-foreground">
+              Alerts publish to the desk’s existing Slack, email, and SMS
+              channels automatically; adjust them later from Settings once the
+              approval workflow is dialed in.
             </div>
           </div>
         </div>
