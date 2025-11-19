@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Toggle } from "@/components/ui/toggle"
+import { Button } from "@/components/ui/button"
 
 const chartConfig = {
   fast: {
@@ -117,6 +118,15 @@ export function JewelOscillatorChart({
           >
             {showFib ? "Hide Fib" : "Show Fib"}
           </Toggle>
+          <Button asChild size="sm" variant="outline" className="text-xs">
+            <a
+              href="https://www.tradingview.com/chart/?symbol=BINANCE:BTCUSDT"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on TradingView
+            </a>
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
