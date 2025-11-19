@@ -451,8 +451,13 @@ export function HistoryDataTable({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {toolbarExtras ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {toolbarExtras}
+          </div>
+        ) : null}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -489,11 +494,6 @@ export function HistoryDataTable({
             <span className="hidden lg:inline">Add Filter</span>
           </Button>
         </div>
-        {toolbarExtras ? (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {toolbarExtras}
-          </div>
-        ) : null}
       </div>
       <div className="relative flex flex-col gap-4 overflow-auto">
         <div className="overflow-hidden rounded-lg border">
