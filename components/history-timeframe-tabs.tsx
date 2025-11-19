@@ -49,10 +49,12 @@ export function HistoryTimeframeTabs({
       </div>
       {TIMEFRAMES.map((tf) => (
         <TabsContent key={tf.value} value={tf.value} className="mt-0">
-          <HistoryDataTable
-            rows={datasets[tf.value] ?? []}
-            timeframeLabel={tf.label}
-          />
+          <div className="-mx-4 lg:-mx-6">
+            <HistoryDataTable
+              rows={datasets[tf.value] ?? []}
+              timeframeLabel={tf.label}
+            />
+          </div>
         </TabsContent>
       ))}
     </Tabs>
