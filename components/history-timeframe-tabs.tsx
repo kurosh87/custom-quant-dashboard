@@ -34,8 +34,8 @@ export function HistoryTimeframeTabs({
       onValueChange={setValue}
       className="flex flex-col gap-4"
     >
-      <div className="px-4 lg:px-6">
-        <TabsList className="flex w-fit flex-wrap gap-2">
+      <div>
+        <TabsList className="flex w-fit flex-wrap gap-2 border border-border/50 bg-muted/40 px-1 py-1">
           {TIMEFRAMES.map((tf) => (
             <TabsTrigger
               key={tf.value}
