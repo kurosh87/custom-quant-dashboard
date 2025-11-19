@@ -124,7 +124,6 @@ export default async function Page() {
                     />
                   </TabsContent>
                 </Tabs>
-                <MacroCard />
               </div>
               <ConfluenceCards />
               <HistoryTimeframeTabs datasets={dashboardDatasets} />
@@ -792,27 +791,3 @@ function ConfluenceCards() {
   )
 }
 
-function MacroCard() {
-  return (
-    <div className="rounded-3xl border bg-card p-6 shadow-sm">
-      <h2 className="text-xl font-semibold">Desk notes</h2>
-      <p className="text-sm text-muted-foreground">
-        Quick macro view to accompany the oscillator stack.
-      </p>
-      <div className="mt-4 space-y-3 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">BTC 24h delta</span>
-          <span className="font-medium text-emerald-500">+1.8%</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Jewel fast avg</span>
-          <span className="font-medium">62.4</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Compression range</span>
-          <span className="font-medium">$1,520</span>
-        </div>
-      </div>
-    </div>
-  )
-}
